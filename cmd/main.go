@@ -1,6 +1,6 @@
 package main
 
-import "github.com/kmlkr/pltt"
+import "github.com/kmlkt/pltt"
 
 func main() {
 	pltt.StartServer()

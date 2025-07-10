@@ -16,8 +16,9 @@ func (e errorResponse) Error() string {
 }
 
 var (
-	invalidPathError = errorResponse{400, "Invalid path. Only alphanumeric characters, underscores & dashes are supported"}
-	invalidBodyError = errorResponse{400, "Invalid body. Only numbers are supported"}
+	invalidKeyError    = errorResponse{400, "Invalid key. Only alphanumeric characters, underscores & dashes are supported"}
+	invalidFormatError = errorResponse{400, "Invalid response format. Supported values: .html (default), .svg, .csv and .json"}
+	invalidBodyError   = errorResponse{400, "Invalid body. Only numbers are supported"}
 )
 
 func writeError(w http.ResponseWriter, e error) {

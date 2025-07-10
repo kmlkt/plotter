@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/http"
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -50,22 +49,24 @@ func post(r *http.Request) error {
 }
 
 func get(w http.ResponseWriter, r *http.Request) error {
-	key, format, err := validateUrl(r)
+	keys, format, err := validateUrl(r)
 	if err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", contentType(format))
+	data := make([]iter.Seq[record], len(keys))
+	for i, key := range keys {
+		data[i], err = read(key)
+		if err != nil {
+			return err
+		}
+	}
 
-	data, err := read(key)
+	err = applyQueryFilters(r, data)
 	if err != nil {
 		return err
 	}
-
-	err = applyQueryFilters(r, &data)
-	if err != nil {
-		return err
-	}
-	marshalData(format, data, w, key)
+	marshalData(format, data, w, keys)
 
 	return nil
 }
@@ -81,28 +82,33 @@ const (
 	formatJson format = "json"
 )
 
-func validateUrl(r *http.Request) (string, format, error) {
-	key, f := parseUrl(r)
-	if !keyValidator.MatchString(key) {
-		return "", "", invalidKeyError
+func validateUrl(r *http.Request) ([]string, format, error) {
+	keys, f := parseUrl(r)
+	if len(keys) == 0 {
+		return nil, "", invalidKeyError
 	}
-	if f != formatHtml && f != formatSvg && f != formatCsv && f != formatJson {
-		return "", "", invalidFormatError
+	for _, key := range keys {
+		if !keyValidator.MatchString(key) {
+			return nil, "", invalidKeyError
+		}
+		if f != formatHtml && f != formatSvg && f != formatCsv && f != formatJson {
+			return nil, "", invalidFormatError
+		}
 	}
-	return key, f, nil
+	return keys, f, nil
 }
 
-func parseUrl(r *http.Request) (string, format) {
+func parseUrl(r *http.Request) ([]string, format) {
 	parts := strings.Split(strings.Trim(r.URL.EscapedPath(), "/"), ".")
 	switch len(parts) {
 	case 0:
-		return "WTF?!", ""
+		return nil, ""
 	case 1:
-		return parts[0], "html"
+		return strings.Split(parts[0], "&"), "html"
 	case 2:
-		return parts[0], format(parts[1])
+		return strings.Split(parts[0], "&"), format(parts[1])
 	default:
-		return "WTF?!", ""
+		return nil, ""
 	}
 }
 
@@ -121,59 +127,70 @@ func contentType(f format) string {
 	}
 }
 
-func applyQueryFilters(r *http.Request, data *iter.Seq[record]) error {
+func applyQueryFilters(r *http.Request, data []iter.Seq[record]) error {
 	if r.URL.Query().Has("since") {
 		t, err := time.Parse("2006-01-02T15:04:05", r.URL.Query().Get("since"))
 		if err != nil {
 			return err
 		}
-		*data = since(*data, t)
+		for i, _ := range data {
+			data[i] = since(data[i], t)
+		}
 	}
 	return nil
 }
 
-func marshalData(format format, data iter.Seq[record], w io.Writer, title string) {
+func marshalData(format format, data []iter.Seq[record], w io.Writer, titles []string) {
 	switch format {
 	case formatHtml:
 		fmt.Fprintf(w, `
 			<!doctype html>
 			<html>
 			<head>
-				<title>%s @ plotter</title>
+				<title>%s - plotter</title>
 				<style>
-					html {
-						margin: 10vh 0 0 0;
+					html, body {
+						margin: 0;
+						padding: 0;
+						overflow: clip;
 					}
 					svg {
 						width: 90vw;
 						height: 90vh;
+						margin: 10vh 0 0 0;
+						border: 0;
+						padding: 0;
 					}
 				</style>
 			</head>
 			<body>
-			`, title)
-		buildGraph(newRecordsDescriptor(slices.Collect(data)), w)
+			`, strings.Join(titles, " & "))
+		buildGraph(newRecordsDescriptor(data), titles, w)
 		fmt.Fprint(w, `
 			</body>
 			</html>
 			`)
 	case formatSvg:
-		buildGraph(newRecordsDescriptor(slices.Collect(data)), w)
+		buildGraph(newRecordsDescriptor(data), titles, w)
 	case formatCsv:
 		fmt.Fprintf(w, "Time,Value\n")
-		for r := range data {
-			r.Fprintf(w, "%s,%f\n")
+		for _, ds := range data {
+			for r := range ds {
+				r.Fprintf(w, "%s,%f\n")
+			}
 		}
 	case formatJson:
 		fmt.Fprint(w, "{")
 		first := true
-		for r := range data {
-			if first {
-				first = false
-			} else {
-				fmt.Fprint(w, ",")
+		for _, ds := range data {
+			for r := range ds {
+				if first {
+					first = false
+				} else {
+					fmt.Fprint(w, ",")
+				}
+				r.Fprintf(w, `"%s": %f`)
 			}
-			r.Fprintf(w, `"%s": %f`)
 		}
 		fmt.Fprint(w, "}")
 	}

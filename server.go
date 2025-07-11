@@ -33,17 +33,21 @@ func StartServer() {
 }
 
 func post(r *http.Request) error {
-	key := strings.Trim(r.URL.EscapedPath(), "/")
-	if !keyValidator.MatchString(key) {
-		return invalidKeyError
+	keys, _, err := validateUrl(r)
+	if err != nil {
+		return err
 	}
+	if len(keys) != 1 {
+		return errorInvalidKeyCount
+	}
+	key := keys[0]
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return err
 	}
 	value, err := strconv.ParseFloat(string(body), 64)
 	if err != nil {
-		return invalidBodyError
+		return errorInvalidBody
 	}
 	return write(key, value)
 }
@@ -85,17 +89,29 @@ const (
 func validateUrl(r *http.Request) ([]string, format, error) {
 	keys, f := parseUrl(r)
 	if len(keys) == 0 {
-		return nil, "", invalidKeyError
+		return nil, "", errorInvalidKey
 	}
-	for _, key := range keys {
-		if !keyValidator.MatchString(key) {
-			return nil, "", invalidKeyError
+	if f != formatHtml && f != formatSvg && f != formatCsv && f != formatJson {
+		return nil, "", errorInvalidFormat
+	}
+	for i, key := range keys {
+		key, err := parseKey(key)
+		if err != nil {
+			return nil, "", err
 		}
-		if f != formatHtml && f != formatSvg && f != formatCsv && f != formatJson {
-			return nil, "", invalidFormatError
-		}
+		keys[i] = key
 	}
 	return keys, f, nil
+}
+
+func parseKey(key string) (string, error) {
+	if len(key) == 0 {
+		return "", errorInvalidKey
+	}
+	if !keyValidator.MatchString(key) {
+		return "", errorInvalidKey
+	}
+	return key, nil
 }
 
 func parseUrl(r *http.Request) ([]string, format) {

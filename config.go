@@ -6,12 +6,14 @@ import (
 )
 
 var (
+	port     string = "80"
 	dirData  string
 	dirRead  string
 	dirWrite string
 )
 
 func init() {
+	setFromEnv(&port, "PORT")
 	cwd, _ := os.Getwd()
 	setFromEnv(&cwd, "DIR")
 	dirData = path.Join(cwd, "data")

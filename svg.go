@@ -3,14 +3,15 @@ package pltt
 import (
 	"fmt"
 	"io"
+	"strings"
 )
 
 func buildGraph(desc recordsDescriptor, titles []string, w io.Writer) {
 	if len(desc.Data) == 0 {
 		return
 	}
-	szV := desc.Values.Max - desc.Values.Min
-	szT := desc.Times.Max - desc.Times.Min
+	szV := float64(desc.Values.Max - desc.Values.Min)
+	szT := float64(desc.Times.Max - desc.Times.Min)
 
 	fmt.Fprint(w, `
 			<svg version='1.1' preserveAspectRatio='none'
@@ -23,8 +24,8 @@ func buildGraph(desc recordsDescriptor, titles []string, w io.Writer) {
 		}
 		points := make([]point, len(dataSource))
 		for i, r := range dataSource {
-			points[i].X = (r.TimeFloat64() - desc.Times.Min) / szT
-			points[i].Y = 1 - (r.Value-desc.Values.Min)/szV
+			points[i].X = float64(r.Timestamp.Unix()-desc.Times.Min) / szT
+			points[i].Y = 1 - float64(describeValue(r.Value)-desc.Values.Min)/szV
 		}
 		color := dataSourceColor(i)
 		drawLine(points, w, color)
@@ -63,9 +64,19 @@ func drawAxis(data recordsDescriptor, builder io.Writer) {
 
 func drawXAxis(times []label, w io.Writer) {
 	for _, time := range times {
-		fmt.Fprintf(w,
-			"<text text-anchor='middle' dominant-baseline='middle' x='%f%%' y='%f%%'>%s</text>",
-			10+time.Position*90, 95.0, time.Value)
+		parts := strings.Split(time.Value, " ")
+		if len(parts) == 2 {
+			fmt.Fprintf(w,
+				"<text text-anchor='middle' dominant-baseline='middle' x='%f%%' y='%f%%'>%s</text>",
+				10+time.Position*90, 93.0, parts[0])
+			fmt.Fprintf(w,
+				"<text text-anchor='middle' dominant-baseline='middle' x='%f%%' y='%f%%'>%s</text>",
+				10+time.Position*90, 98.0, parts[1])
+		} else {
+			fmt.Fprintf(w,
+				"<text text-anchor='middle' dominant-baseline='middle' x='%f%%' y='%f%%'>%s</text>",
+				10+time.Position*90, 95.0, time.Value)
+		}
 	}
 }
 

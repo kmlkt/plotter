@@ -20,11 +20,13 @@ func (d *descriptor[T]) Append(value T) {
 type recordsDescriptor struct {
 	Data [][]record
 	// seconds
-	Times  descriptor[float64]
-	Values descriptor[float64]
+	Times  descriptor[int64]
+	Values descriptor[int64]
 }
 
-var emptyDescriptor = descriptor[float64]{math.MaxFloat64, -math.MaxFloat64}
+var emptyDescriptor = descriptor[int64]{math.MaxInt64, math.MinInt64}
+
+const e9 = 1_000_000_000
 
 func newRecordsDescriptor(iters []iter.Seq[record]) recordsDescriptor {
 	data := make([][]record, len(iters))
@@ -33,13 +35,21 @@ func newRecordsDescriptor(iters []iter.Seq[record]) recordsDescriptor {
 	for i, iter := range iters {
 		data[i] = slices.Collect(iter)
 		for _, r := range data[i] {
-			t.Append(r.TimeFloat64())
-			v.Append(r.Value)
+			t.Append(r.Timestamp.Unix())
+			v.Append(describeValue(r.Value))
 		}
+	}
+	if v.Min == v.Max {
+		v.Min -= e9
+		v.Max += e9
+	}
+	if t.Min == t.Max {
+		t.Min -= 1
+		t.Max += 1
 	}
 	return recordsDescriptor{data, t, v}
 }
 
-func (r record) TimeFloat64() float64 {
-	return float64(r.Timestamp.UnixNano()) / 1e9
+func describeValue(value float64) int64 {
+	return int64(value * 1e9)
 }

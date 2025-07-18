@@ -8,6 +8,6 @@
     "cwd": "/home/karim/Dev/pltt/cmd",
     "args": [],
     "buildFlags": [],
-    "env": {}
+    "env": { "PORT": "8080" }
   }
 ]

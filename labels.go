@@ -1,8 +1,7 @@
 package pltt
 
 import (
-	"math"
-	"strconv"
+	"slices"
 	"time"
 )
 
@@ -12,50 +11,52 @@ type label struct {
 }
 
 // seconds
-var timeIntervals = []float64{1, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 10800, 21600, 43200, 86400, 864000}
-var valueIntervals = []float64{1e-10, 2e-10, 5e-10, 1e-9, 2e-9, 5e-9, 1e-8, 2e-8, 5e-8, 1e-7, 2e-7, 5e-7, 1e-6, 2e-6, 5e-6, 1e-5, 2e-5, 5e-5, 1e-4, 2e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1, 5e-1, 1e0, 2e0, 5e0, 1e1, 2e1, 5e1, 1e2, 2e2, 5e2, 1e3, 2e3, 5e3, 1e4, 2e4, 5e4, 1e5, 2e5, 5e5, 1e6, 2e6, 5e6, 1e7, 2e7, 5e7, 1e8, 2e8, 5e8, 1e9, 2e9, 5e9, 1e10, 2e10, 5e10}
+var timeIntervals = []int64{1, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 10800, 21600, 43200, 86400, 864000}
+var valueIntervals = []int64{1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000, 20000000, 50000000, 100000000, 200000000, 500000000, 1000000000, 2000000000, 5000000000, 10000000000, 20000000000, 50000000000, 100000000000, 200000000000, 500000000000, 1000000000000, 2000000000000, 5000000000000, 10000000000000, 20000000000000, 50000000000000, 100000000000000, 200000000000000, 500000000000000, 1000000000000000, 2000000000000000, 5000000000000000, 10000000000000000, 20000000000000000, 50000000000000000, 100000000000000000, 200000000000000000, 500000000000000000, 1000000000000000000, 2000000000000000000, 5000000000000000000}
 
 func labels(data recordsDescriptor) (times []label, values []label) {
-	times = optimalLabels(data.Times, timeIntervals, TimeString)
-	values = optimalLabels(data.Values, valueIntervals, ValueString)
+	times = optimalLabels(data.Times, timeIntervals, timeString)
+	values = optimalLabels(data.Values, valueIntervals, valueString)
 	return
 }
 
-func optimalLabels(values descriptor[float64], intervals []float64, stringify func(interval float64, label float64) string) []label {
+func optimalLabels(values descriptor[int64], intervals []int64, stringify func(interval int64, label int64) string) []label {
 	interval, count := optimalInterval(values, intervals)
 	ans := make([]label, count)
+	v := values.Min + interval - 1
+	v -= v % interval
 	for i := range count {
-		v := interval * (math.Ceil(values.Min/interval) + float64(i))
 		ans[i].Value = stringify(interval, v)
-		ans[i].Position = (v - values.Min) / (values.Max - values.Min)
+		ans[i].Position = float64(v-values.Min) / float64(values.Max-values.Min)
+		v += interval
 	}
 	return ans
 }
 
-func optimalInterval(values descriptor[float64], intervals []float64) (interval float64, count int) {
+func optimalInterval(values descriptor[int64], intervals []int64) (interval int64, count int) {
 	for _, intr := range intervals {
 		cnt := labelCount(values, intr)
-		if count < cnt && cnt <= 10 {
+		if int64(count) < cnt && cnt <= 10 {
 			interval = intr
-			count = cnt
+			count = int(cnt)
 		}
 	}
 	return
 }
 
-func labelCount(values descriptor[float64], interval float64) int {
-	firstIndex := int(math.Ceil(values.Min / interval))
-	lastIndex := int(values.Max / interval)
+func labelCount(values descriptor[int64], interval int64) int64 {
+	firstIndex := (values.Min + interval - 1) / interval
+	lastIndex := values.Max / interval
 	return lastIndex - firstIndex + 1
 }
 
-func TimeString(interval float64, label float64) string {
+func timeString(interval int64, label int64) string {
 	layout := time.TimeOnly
 	if interval >= 60 {
 		layout = "15:04"
 	}
 	if interval >= 6*60*60 {
-		layout = time.DateTime
+		layout = "01-02 15:04"
 	}
 	if interval >= 24*60*60 {
 		layout = time.DateOnly
@@ -64,6 +65,34 @@ func TimeString(interval float64, label float64) string {
 	return time.UTC().Format(layout)
 }
 
-func ValueString(_ float64, label float64) string {
-	return strconv.FormatFloat(label, 'G', -1, 64)
+func valueString(_ int64, label int64) string {
+	neg := label < 0
+	if neg {
+		label = -label
+	}
+	chars := make([]byte, 0)
+	writeDigit := func() {
+		chars = append(chars, '0'+byte(label%10))
+		label /= 10
+	}
+	for range 9 {
+		writeDigit()
+	}
+	chars = append(chars, '.')
+	writeDigit()
+	for label != 0 {
+		writeDigit()
+	}
+
+	for chars[0] == '0' {
+		chars = chars[1:]
+	}
+	if chars[0] == '.' {
+		chars = chars[1:]
+	}
+	if neg {
+		chars = append(chars, '-')
+	}
+	slices.Reverse(chars)
+	return string(chars)
 }

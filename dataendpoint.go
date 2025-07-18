@@ -195,12 +195,43 @@ func marshalData(format format, data []iter.Seq[record], w io.Writer, titles []s
 						border: 0;
 						padding: 0;
 					}
+					#tooltip {
+						position: absolute;
+					}
 				</style>
 			</head>
 			<body>
 			`, strings.Join(titles, " & "))
 		buildGraph(newRecordsDescriptor(data), titles, w)
 		fmt.Fprint(w, `
+			<span id='tooltip'></span>
+			<script>
+			const $svg = document.querySelector('svg')
+			const $tooltip = document.querySelector('#tooltip')
+			const circles = Array.from(document.querySelectorAll('circle')).map(c => ({
+				x: (c.getBoundingClientRect().left + c.getBoundingClientRect().right) / 2,
+				y: c.getBoundingClientRect().y,
+				text: c.textContent,
+			}))
+			$svg.addEventListener('mousemove', e => {
+				const x = e.clientX
+				const y = e.clientY
+				const dist = (c) => Math.abs(x - c.x)
+				let nearest = undefined
+				for (const c of circles) {
+					if (!nearest
+					|| dist(c) < dist(nearest)
+					|| dist(c) == dist(nearest) && c.y < nearest.y) {
+						nearest = c
+					}
+				}
+				if(nearest){
+					tooltip.textContent = nearest.text
+					tooltip.style.left = (nearest.x - tooltip.clientWidth / 2) + 'px'
+					tooltip.style.top = (nearest.y - 20) + 'px'
+				}
+			})
+			</script>
 			</body>
 			</html>
 			`)

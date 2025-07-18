@@ -26,6 +26,7 @@ func buildGraph(desc recordsDescriptor, titles []string, w io.Writer) {
 		for i, r := range dataSource {
 			points[i].X = float64(r.Timestamp.Unix()-desc.Times.Min) / szT
 			points[i].Y = 1 - float64(describeValue(r.Value)-desc.Values.Min)/szV
+			points[i].Value = fmt.Sprintf("%v", r.Value)
 		}
 		color := dataSourceColor(i)
 		drawLine(points, w, color)
@@ -90,8 +91,9 @@ func drawYAxis(values []label, w io.Writer) {
 
 // coordiantes from 0 to 1
 type point struct {
-	X float64
-	Y float64
+	X     float64
+	Y     float64
+	Value string
 }
 
 func (p point) DrawOnLine(w io.Writer) {
@@ -99,7 +101,7 @@ func (p point) DrawOnLine(w io.Writer) {
 }
 
 func (p point) DrawSeparately(w io.Writer, color string) {
-	fmt.Fprintf(w, "<circle cx='%f%%' cy='%f%%' r='4' fill='%s'/>", 10+p.X*90, p.Y*90, color)
+	fmt.Fprintf(w, "<circle cx='%f%%' cy='%f%%' r='4' fill='%s'>%s</circle>", 10+p.X*90, p.Y*90, color, p.Value)
 }
 
 func drawLegend(w io.Writer, titles []string) {

@@ -107,6 +107,19 @@ func since(s iter.Seq[record], t time.Time) iter.Seq[record] {
 	}
 }
 
+func until(s iter.Seq[record], t time.Time) iter.Seq[record] {
+	return func(yield func(record) bool) {
+		for r := range s {
+			if r.Timestamp.After(t) {
+				continue
+			}
+			if !yield(r) {
+				return
+			}
+		}
+	}
+}
+
 func intervalSum(s iter.Seq[record], d time.Duration) iter.Seq[record] {
 	return func(yield func(record) bool) {
 		prev := int64(-1)
@@ -133,7 +146,9 @@ func intervalSum(s iter.Seq[record], d time.Duration) iter.Seq[record] {
 			}
 		}
 		if ps != 0 {
-			yield(record{time.UnixMicro((prev + 1) * d.Microseconds()), ps})
+			if !yield(record{time.UnixMicro((prev + 1) * d.Microseconds()), ps}) {
+				return
+			}
 			yield(record{time.UnixMicro(prev * d.Microseconds()), ps})
 		}
 	}

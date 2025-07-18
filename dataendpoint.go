@@ -138,6 +138,15 @@ func applyQueryFilters(r *http.Request, data []iter.Seq[record]) error {
 			return since(s, t)
 		})
 	}
+	if query.Has("until") {
+		t, err := time.Parse("2006-01-02T15:04:05", query.Get("until"))
+		if err != nil {
+			return err
+		}
+		filters = append(filters, func(s iter.Seq[record]) iter.Seq[record] {
+			return until(s, t)
+		})
+	}
 	if query.Has("sum") {
 		d, err := time.ParseDuration(query.Get("sum"))
 		if err != nil {

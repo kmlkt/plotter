@@ -156,6 +156,15 @@ func applyQueryFilters(r *http.Request, data []iter.Seq[record]) error {
 			return intervalSum(s, d)
 		})
 	}
+	if query.Has("last") {
+		d, err := time.ParseDuration(query.Get("last"))
+		if err != nil {
+			return err
+		}
+		filters = append(filters, func(s iter.Seq[record]) iter.Seq[record] {
+			return last(s, d)
+		})
+	}
 
 	for i, _ := range data {
 		for _, f := range filters {

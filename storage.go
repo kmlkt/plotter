@@ -153,3 +153,7 @@ func intervalSum(s iter.Seq[record], d time.Duration) iter.Seq[record] {
 		}
 	}
 }
+
+func last(s iter.Seq[record], d time.Duration) iter.Seq[record] {
+	return since(s, time.Now().Add(-d))
+}

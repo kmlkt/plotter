@@ -20,7 +20,8 @@ func (d *descriptor[T]) Append(value T) {
 type recordsDescriptor struct {
 	Data [][]record
 	// seconds
-	Times  descriptor[int64]
+	Times descriptor[int64]
+	// x1e9
 	Values descriptor[int64]
 }
 
@@ -38,6 +39,14 @@ func newRecordsDescriptor(iters []iter.Seq[record]) recordsDescriptor {
 			t.Append(r.Timestamp.Unix())
 			v.Append(describeValue(r.Value))
 		}
+	}
+	if v.Min == math.MaxInt64 {
+		v.Min = 0
+		v.Max = e9
+	}
+	if t.Min == math.MaxInt64 {
+		t.Min = 0
+		t.Max = 1
 	}
 	if v.Min == v.Max {
 		v.Min -= e9

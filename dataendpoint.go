@@ -147,15 +147,6 @@ func applyQueryFilters(r *http.Request, data []iter.Seq[record]) error {
 			return until(s, t)
 		})
 	}
-	if query.Has("sum") {
-		d, err := time.ParseDuration(query.Get("sum"))
-		if err != nil {
-			return err
-		}
-		filters = append(filters, func(s iter.Seq[record]) iter.Seq[record] {
-			return intervalSum(s, d)
-		})
-	}
 	if query.Has("last") {
 		d, err := time.ParseDuration(query.Get("last"))
 		if err != nil {
@@ -163,6 +154,15 @@ func applyQueryFilters(r *http.Request, data []iter.Seq[record]) error {
 		}
 		filters = append(filters, func(s iter.Seq[record]) iter.Seq[record] {
 			return last(s, d)
+		})
+	}
+	if query.Has("sum") {
+		d, err := time.ParseDuration(query.Get("sum"))
+		if err != nil {
+			return err
+		}
+		filters = append(filters, func(s iter.Seq[record]) iter.Seq[record] {
+			return intervalSum(s, d)
 		})
 	}
 

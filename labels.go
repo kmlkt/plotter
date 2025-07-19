@@ -36,7 +36,7 @@ func optimalLabels(values descriptor[int64], intervals []int64, stringify func(i
 func optimalInterval(values descriptor[int64], intervals []int64) (interval int64, count int) {
 	for _, intr := range intervals {
 		cnt := labelCount(values, intr)
-		if int64(count) < cnt && cnt <= 10 {
+		if int64(count) < cnt && cnt <= 11 {
 			interval = intr
 			count = int(cnt)
 		}

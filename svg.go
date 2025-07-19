@@ -3,12 +3,19 @@ package pltt
 import (
 	"fmt"
 	"io"
+	"iter"
 	"strings"
 )
 
-func buildGraph(desc recordsDescriptor, titles []string, w io.Writer) {
-	if len(desc.Data) == 0 {
+func buildGraph(w io.Writer, iters []iter.Seq[record], cfg graphConfig) {
+	if len(iters) == 0 {
 		return
+	}
+	data := multiCollect(iters)
+	desc := newRecordsDescriptor(data)
+	desc.Times.Max = cfg.maxT.Unix()
+	if cfg.minT.Unix() != 0 {
+		desc.Times.Min = cfg.minT.Unix()
 	}
 	szV := float64(desc.Values.Max - desc.Values.Min)
 	szT := float64(desc.Times.Max - desc.Times.Min)
@@ -18,7 +25,7 @@ func buildGraph(desc recordsDescriptor, titles []string, w io.Writer) {
 			style='overflow: visible' xmlns='http://www.w3.org/2000/svg'>
 			`)
 
-	for i, dataSource := range desc.Data {
+	for i, dataSource := range data {
 		if len(dataSource) == 0 {
 			continue
 		}
@@ -33,7 +40,7 @@ func buildGraph(desc recordsDescriptor, titles []string, w io.Writer) {
 		drawDots(points, w, color)
 	}
 	drawAxis(desc, w)
-	drawLegend(w, titles)
+	drawLegend(w, cfg.keys)
 	fmt.Fprint(w, "</svg>")
 }
 

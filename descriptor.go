@@ -2,9 +2,7 @@ package pltt
 
 import (
 	"cmp"
-	"iter"
 	"math"
-	"slices"
 )
 
 type descriptor[T cmp.Ordered] struct {
@@ -18,7 +16,6 @@ func (d *descriptor[T]) Append(value T) {
 }
 
 type recordsDescriptor struct {
-	Data [][]record
 	// seconds
 	Times descriptor[int64]
 	// x1e9
@@ -29,13 +26,11 @@ var emptyDescriptor = descriptor[int64]{math.MaxInt64, math.MinInt64}
 
 const e9 = 1_000_000_000
 
-func newRecordsDescriptor(iters []iter.Seq[record]) recordsDescriptor {
-	data := make([][]record, len(iters))
+func newRecordsDescriptor(data [][]record) recordsDescriptor {
 	t := emptyDescriptor
 	v := emptyDescriptor
-	for i, iter := range iters {
-		data[i] = slices.Collect(iter)
-		for _, r := range data[i] {
+	for _, di := range data {
+		for _, r := range di {
 			t.Append(r.Timestamp.Unix())
 			v.Append(describeValue(r.Value))
 		}
@@ -56,7 +51,7 @@ func newRecordsDescriptor(iters []iter.Seq[record]) recordsDescriptor {
 		t.Min -= 1
 		t.Max += 1
 	}
-	return recordsDescriptor{data, t, v}
+	return recordsDescriptor{t, v}
 }
 
 func describeValue(value float64) int64 {

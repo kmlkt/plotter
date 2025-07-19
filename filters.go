@@ -41,7 +41,7 @@ func intervalSum(s iter.Seq[record], cfg graphConfig) iter.Seq[record] {
 	if cfg.sumD == 0 {
 		return s
 	}
-	ans := make(map[time.Time]float64)
+	ans := make(map[time.Time]decimal)
 	for r := range s {
 		ans[r.Timestamp.Truncate(cfg.sumD)] += r.Value
 	}

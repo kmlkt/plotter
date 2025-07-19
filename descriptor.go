@@ -1,59 +1,69 @@
 package pltt
 
-import (
-	"cmp"
-	"math"
-)
+import "time"
 
-type descriptor[T cmp.Ordered] struct {
+type diff interface{ ~int64 }
+
+type calculable[Self any, D diff] interface {
+	Add(m D) Self
+	Sub(u Self) D
+	Truncate(m D) Self
+	String() string
+	Format(format string) string
+}
+
+type descriptor[T calculable[T, D], D diff] struct {
 	Min T
 	Max T
 }
 
-func (d *descriptor[T]) Append(value T) {
-	d.Max = max(d.Max, value)
-	d.Min = min(d.Min, value)
+func (d descriptor[T, D]) position(value T) float64 {
+	return float64(value.Sub(d.Min)) / float64(d.Max.Sub(d.Min))
+}
+
+func newDecriptor[T calculable[T, D], D diff](v T) *descriptor[T, D] {
+	return &descriptor[T, D]{v, v}
+}
+
+func (d *descriptor[T, D]) Append(value T) {
+	if value.Sub(d.Max) > 0 {
+		d.Max = value
+	}
+	if value.Sub(d.Min) < 0 {
+		d.Min = value
+	}
 }
 
 type recordsDescriptor struct {
-	// seconds
-	Times descriptor[int64]
-	// x1e9
-	Values descriptor[int64]
+	Times  descriptor[time.Time, time.Duration]
+	Values descriptor[decimal, decimal]
 }
-
-var emptyDescriptor = descriptor[int64]{math.MaxInt64, math.MinInt64}
-
-const e9 = 1_000_000_000
 
 func newRecordsDescriptor(data [][]record) recordsDescriptor {
-	t := emptyDescriptor
-	v := emptyDescriptor
+	var t *descriptor[time.Time, time.Duration]
+	var v *descriptor[decimal, decimal]
 	for _, di := range data {
 		for _, r := range di {
-			t.Append(r.Timestamp.Unix())
-			v.Append(describeValue(r.Value))
+			if t == nil || v == nil {
+				t = newDecriptor(r.Timestamp)
+				v = newDecriptor(r.Value)
+			} else {
+				t.Append(r.Timestamp)
+				v.Append(r.Value)
+			}
 		}
 	}
-	if v.Min == math.MaxInt64 {
-		v.Min = 0
-		v.Max = e9
-	}
-	if t.Min == math.MaxInt64 {
-		t.Min = 0
-		t.Max = 1
+	if t == nil || v == nil {
+		t = newDecriptor(time.Unix(0, 0))
+		v = newDecriptor(decimal(0))
 	}
 	if v.Min == v.Max {
-		v.Min -= e9
-		v.Max += e9
+		v.Min -= d1
+		v.Max += d1
 	}
-	if t.Min == t.Max {
-		t.Min -= 1
-		t.Max += 1
+	if t.Min.Equal(t.Max) {
+		t.Min.Add(-time.Second)
+		t.Max.Add(+time.Second)
 	}
-	return recordsDescriptor{t, v}
-}
-
-func describeValue(value float64) int64 {
-	return int64(value * 1e9)
+	return recordsDescriptor{*t, *v}
 }

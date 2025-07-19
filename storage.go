@@ -34,7 +34,7 @@ func open(tableName string) (*ConcurrentFile, error) {
 	return opened[tableName], nil
 }
 
-func write(key string, value float64) error {
+func write(key string, value decimal) error {
 	tn, err := readOrCreateTableName(key, permWrite)
 	if err != nil {
 		return err
@@ -59,7 +59,7 @@ func write(key string, value float64) error {
 
 type record struct {
 	Timestamp time.Time
-	Value     float64
+	Value     decimal
 }
 
 func read(key string) (iter.Seq[record], error) {
@@ -78,7 +78,7 @@ func read(key string) (iter.Seq[record], error) {
 		for i := int64(1); true; i++ {
 			file.Seek(i*-16, 2)
 			var timestamp int64
-			var value float64
+			var value decimal
 			err = binary.Read(file, binary.BigEndian, &timestamp)
 			if err != nil {
 				return
@@ -87,7 +87,7 @@ func read(key string) (iter.Seq[record], error) {
 			if err != nil {
 				return
 			}
-			if !yield(record{time.UnixMicro(timestamp), value}) {
+			if !yield(record{time.UnixMicro(timestamp).UTC(), value}) {
 				return
 			}
 		}

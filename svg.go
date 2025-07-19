@@ -13,12 +13,10 @@ func buildGraph(w io.Writer, iters []iter.Seq[record], cfg graphConfig) {
 	}
 	data := multiCollect(iters)
 	desc := newRecordsDescriptor(data)
-	desc.Times.Max = cfg.maxT.Unix()
+	desc.Times.Max = cfg.maxT
 	if cfg.minT.Unix() != 0 {
-		desc.Times.Min = cfg.minT.Unix()
+		desc.Times.Min = cfg.minT
 	}
-	szV := float64(desc.Values.Max - desc.Values.Min)
-	szT := float64(desc.Times.Max - desc.Times.Min)
 
 	fmt.Fprint(w, `
 			<svg version='1.1' preserveAspectRatio='none'
@@ -31,8 +29,8 @@ func buildGraph(w io.Writer, iters []iter.Seq[record], cfg graphConfig) {
 		}
 		points := make([]point, len(dataSource))
 		for i, r := range dataSource {
-			points[i].X = float64(r.Timestamp.Unix()-desc.Times.Min) / szT
-			points[i].Y = 1 - float64(describeValue(r.Value)-desc.Values.Min)/szV
+			points[i].X = desc.Times.position(r.Timestamp)
+			points[i].Y = 1 - desc.Values.position(r.Value)
 			points[i].Value = fmt.Sprintf("%v", r.Value)
 		}
 		color := dataSourceColor(i)

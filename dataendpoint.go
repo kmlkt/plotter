@@ -6,7 +6,6 @@ import (
 	"io"
 	"iter"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -14,7 +13,7 @@ import (
 func dataGet(w http.ResponseWriter, r *http.Request) error {
 	cfg := graphConfig{}
 	cfg.minT = time.Unix(0, 0)
-	cfg.maxT = time.Now()
+	cfg.maxT = time.Now().UTC()
 	cfg.sumD = time.Duration(0)
 	cfg.xLabels = 10
 	cfg.yLabels = 10
@@ -54,10 +53,7 @@ func dataPost(_ http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	value, err := strconv.ParseFloat(string(body), 64)
-	if err != nil {
-		return errorInvalidBody
-	}
+	value := parseDecimal(string(body))
 	return write(key, value)
 }
 

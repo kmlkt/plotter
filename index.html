@@ -27,11 +27,11 @@
         <script>
             const $tooltip = document.querySelector("#tooltip");
             let circles = [];
-            const onMouseMove = (e) => {
-                const x = e.clientX;
-                const y = e.clientY;
-                const dist = (c) => Math.abs(x - c.x);
-                const distY = (c) => Math.abs(y - c.y);
+            let x = 0;
+            let y = 0;
+            const dist = (c) => Math.abs(x - c.x);
+            const distY = (c) => Math.abs(y - c.y);
+            const updateHovered = () => {
                 let nearest = undefined;
                 for (const c of circles) {
                     if (
@@ -49,6 +49,12 @@
                     tooltip.style.top = nearest.y - 20 + "px";
                 }
             };
+            const onMouseMove = (e) => {
+                x = e.clientX;
+                y = e.clientY;
+                updateHovered();
+            };
+            document.body.addEventListener("mousemove", onMouseMove);
             const refresh = async () => {
                 const response = await fetch(
                     window.location.origin +
@@ -68,9 +74,7 @@
                         text: c.textContent,
                     }),
                 );
-                document
-                    .querySelector("svg")
-                    .addEventListener("mousemove", onMouseMove);
+                updateHovered();
                 setTimeout(refresh, 1000);
             };
             refresh();

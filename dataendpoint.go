@@ -46,14 +46,17 @@ func dataPost(_ http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	if len(cfg.keys) != 1 {
-		return errorInvalidKeyCount
+		return formatError(errorInvalidKeyCount, len(cfg.keys))
 	}
 	key := cfg.keys[0]
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return err
 	}
-	value := parseDecimal(string(body))
+	value, err := parseDecimal(string(body))
+	if err != nil {
+		return formatError(errorInvalidBody, string(body), err.Error())
+	}
 	return write(key, value)
 }
 

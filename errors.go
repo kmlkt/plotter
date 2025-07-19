@@ -6,13 +6,16 @@ import (
 )
 
 var (
-	errorInvalidKey      = errors.New("Invalid key. Only alphanumeric characters, underscores & dashes are supported")
-	errorInvalidFormat   = errors.New("Invalid response format. Supported values: .html (default), .svg, .csv and .json")
-	errorInvalidBody     = errors.New("Invalid body. Only numbers are supported")
-	errorInvalidKeyCount = errors.New("Only 1 key is supported in POST request")
+	errorNoKeys          = errors.New("Need at least 1 key, no keys given")
+	errorInvalidKey      = errors.New("Invalid key: %v. Only alphanumeric characters, underscores & dashes are supported")
+	errorInvalidFormat   = errors.New("Invalid response format: %v. Supported values: .html (default), .svg, .csv and .json")
+	errorInvalidBody     = errors.New("Invalid body: %s, reason: %s. Only numbers with decimal point like 12 or 3.14 are supported")
+	errorInvalidKeyCount = errors.New("Only 1 key is supported in POST request, %v given")
 	errorKeyExists       = errors.New("Cannot create %s key %s, because it already exists")
 	errorKeyNotFound     = errors.New("Table with %s key %s not found")
 	errorKeyNoPermission = errors.New("Key %s cannot %s")
+	errorInvalidSymbol   = errors.New("%v symbol is %s, expected digit")
+	errorStringEmpty     = errors.New("string is empty")
 )
 
 func formatError(base error, args ...any) error {

@@ -33,10 +33,10 @@ const (
 func validateUrl(r *http.Request, cfg *graphConfig) error {
 	cfg.keys, cfg.format = parseUrl(r)
 	if len(cfg.keys) == 0 {
-		return errorInvalidKey
+		return errorNoKeys
 	}
 	if cfg.format != formatHtml && cfg.format != formatSvg && cfg.format != formatCsv && cfg.format != formatJson {
-		return errorInvalidFormat
+		return formatError(errorInvalidFormat, cfg.format)
 	}
 	for _, key := range cfg.keys {
 		err := validateKey(key)
@@ -67,10 +67,10 @@ func parseUrl(r *http.Request) ([]string, format) {
 
 func validateKey(key string) error {
 	if len(key) == 0 {
-		return errorInvalidKey
+		return formatError(errorInvalidKey, "<empty string>")
 	}
 	if !keyValidator.MatchString(key) {
-		return errorInvalidKey
+		return formatError(errorInvalidKey, key)
 	}
 	return nil
 }

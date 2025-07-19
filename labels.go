@@ -1,7 +1,6 @@
 package pltt
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -45,7 +44,6 @@ func optimalInterval[T calculable[T, D], D diff](values descriptor[T, D], maxCou
 }
 
 func labelCount[T calculable[T, D], D diff](values descriptor[T, D], interval D) int64 {
-	fmt.Print(lastLabel(values, interval), firstLabel(values, interval))
 	return int64(lastLabel(values, interval).Sub(firstLabel(values, interval)))/int64(interval) + 1
 }
 

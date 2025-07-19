@@ -40,7 +40,11 @@ func testDString(arg decimal, expected string, t *testing.T) {
 }
 
 func testDParse(expected decimal, arg string, t *testing.T) {
-	assertEquals(fmt.Sprintf("parseDecimal( %v )", arg), parseDecimal(arg), expected, t)
+	ans, err := parseDecimal(arg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertEquals(fmt.Sprintf("parseDecimal( %v )", arg), ans, expected, t)
 }
 
 func assertEquals[T comparable](key string, given T, expected T, t *testing.T) {

@@ -206,22 +206,23 @@ func marshalData(format format, data []iter.Seq[record], w io.Writer, titles []s
 		fmt.Fprint(w, `
 			<span id='tooltip'></span>
 			<script>
-			const $svg = document.querySelector('svg')
+			let $svg = document.querySelector('svg')
 			const $tooltip = document.querySelector('#tooltip')
-			const circles = Array.from(document.querySelectorAll('circle')).map(c => ({
+			let circles = Array.from(document.querySelectorAll('circle')).map(c => ({
 				x: (c.getBoundingClientRect().left + c.getBoundingClientRect().right) / 2,
 				y: c.getBoundingClientRect().y,
 				text: c.textContent,
 			}))
-			$svg.addEventListener('mousemove', e => {
+			const onMouseMove = e => {
 				const x = e.clientX
 				const y = e.clientY
 				const dist = (c) => Math.abs(x - c.x)
+				const distY = (c) => Math.abs(y - c.y)
 				let nearest = undefined
 				for (const c of circles) {
 					if (!nearest
 					|| dist(c) < dist(nearest)
-					|| dist(c) == dist(nearest) && c.y < nearest.y) {
+					|| dist(c) == dist(nearest) && distY(c) < distY(nearest)) {
 						nearest = c
 					}
 				}
@@ -230,7 +231,21 @@ func marshalData(format format, data []iter.Seq[record], w io.Writer, titles []s
 					tooltip.style.left = (nearest.x - tooltip.clientWidth / 2) + 'px'
 					tooltip.style.top = (nearest.y - 20) + 'px'
 				}
-			})
+			}
+			$svg.addEventListener('mousemove', onMouseMove)
+			setInterval(async () => {
+				const response = await fetch(window.location.origin + window.location.pathname +
+					'.svg' + window.location.search)
+				const text = await response.text()
+				$svg.outerHTML = text
+				$svg = document.querySelector('svg')
+				$svg.addEventListener('mousemove', onMouseMove)
+				circles = Array.from(document.querySelectorAll('circle')).map(c => ({
+					x: (c.getBoundingClientRect().left + c.getBoundingClientRect().right) / 2,
+					y: c.getBoundingClientRect().y,
+					text: c.textContent,
+				}))
+			}, 1000)
 			</script>
 			</body>
 			</html>

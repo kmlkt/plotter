@@ -1,7 +1,7 @@
 package main
 
-import "github.com/kmlkt/pltt"
+import "github.com/kmlkt/plotter"
 
 func main() {
-	pltt.StartServer()
+	plotter.StartServer()
 }

@@ -1,4 +1,4 @@
-package pltt
+package plotter
 
 import "time"
 

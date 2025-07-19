@@ -39,7 +39,7 @@ func buildGraph(w io.Writer, iters []iter.Seq[record], cfg graphConfig) {
 		drawLine(points, w, color)
 		drawDots(points, w, color)
 	}
-	drawAxis(desc, w)
+	drawAxis(desc, cfg, w)
 	drawLegend(w, cfg.keys)
 	fmt.Fprint(w, "</svg>")
 }
@@ -64,8 +64,8 @@ func drawDots(points []point, w io.Writer, color string) {
 	}
 }
 
-func drawAxis(data recordsDescriptor, builder io.Writer) {
-	times, values := labels(data)
+func drawAxis(data recordsDescriptor, cfg graphConfig, builder io.Writer) {
+	times, values := labels(data, cfg)
 	drawXAxis(times, builder)
 	drawYAxis(values, builder)
 }

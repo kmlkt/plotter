@@ -1,18 +1,22 @@
 package pltt
 
 import (
+	"errors"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
 
 type graphConfig struct {
-	format format
-	keys   []string
-	minT   time.Time
-	maxT   time.Time
-	sumD   time.Duration
+	format  format
+	keys    []string
+	minT    time.Time
+	maxT    time.Time
+	sumD    time.Duration
+	xLabels int
+	yLabels int
 }
 
 var keyValidator = regexp.MustCompile("^[A-Za-z0-9_-]+$")
@@ -88,34 +92,33 @@ func contentType(f format) string {
 
 func parseQueryArgs(r *http.Request, cfg *graphConfig) error {
 	query := r.URL.Query()
-	cfg.minT = time.Unix(0, 0)
-	cfg.maxT = time.Now()
-	cfg.sumD = time.Duration(0)
-	var err error
-	if query.Has("since") {
-		cfg.minT, err = time.Parse("2006-01-02T15:04:05", query.Get("since"))
-		if err != nil {
-			return err
+	arg := func(key string, handler func(value string, err *error)) error {
+		var err error
+		if query.Has(key) {
+			handler(query.Get(key), &err)
 		}
+		return err
 	}
-	if query.Has("until") {
-		cfg.maxT, err = time.Parse("2006-01-02T15:04:05", query.Get("until"))
-		if err != nil {
-			return err
-		}
-	}
-	if query.Has("last") {
-		d, err := time.ParseDuration(query.Get("last"))
-		if err != nil {
-			return err
-		}
-		cfg.minT = cfg.maxT.Add(-d)
-	}
-	if query.Has("sum") {
-		cfg.sumD, err = time.ParseDuration(query.Get("sum"))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return errors.Join(
+		arg("since", func(value string, err *error) {
+			cfg.minT, *err = time.Parse("2006-01-02T15:04:05", value)
+		}),
+		arg("until", func(value string, err *error) {
+			cfg.maxT, *err = time.Parse("2006-01-02T15:04:05", value)
+		}),
+		arg("last", func(value string, err *error) {
+			var d time.Duration
+			d, *err = time.ParseDuration(value)
+			cfg.minT = cfg.maxT.Add(-d)
+		}),
+		arg("sum", func(value string, err *error) {
+			cfg.sumD, *err = time.ParseDuration(value)
+		}),
+		arg("x", func(value string, err *error) {
+			cfg.xLabels, *err = strconv.Atoi(value)
+		}),
+		arg("y", func(value string, err *error) {
+			cfg.yLabels, *err = strconv.Atoi(value)
+		}),
+	)
 }

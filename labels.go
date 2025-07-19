@@ -14,14 +14,14 @@ type label struct {
 var timeIntervals = []int64{1, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 10800, 21600, 43200, 86400, 864000}
 var valueIntervals = []int64{1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000, 20000000, 50000000, 100000000, 200000000, 500000000, 1000000000, 2000000000, 5000000000, 10000000000, 20000000000, 50000000000, 100000000000, 200000000000, 500000000000, 1000000000000, 2000000000000, 5000000000000, 10000000000000, 20000000000000, 50000000000000, 100000000000000, 200000000000000, 500000000000000, 1000000000000000, 2000000000000000, 5000000000000000, 10000000000000000, 20000000000000000, 50000000000000000, 100000000000000000, 200000000000000000, 500000000000000000, 1000000000000000000, 2000000000000000000, 5000000000000000000}
 
-func labels(data recordsDescriptor) (times []label, values []label) {
-	times = optimalLabels(data.Times, timeIntervals, timeString)
-	values = optimalLabels(data.Values, valueIntervals, valueString)
+func labels(data recordsDescriptor, cfg graphConfig) (times []label, values []label) {
+	times = optimalLabels(data.Times, cfg.xLabels, timeIntervals, timeString)
+	values = optimalLabels(data.Values, cfg.yLabels, valueIntervals, valueString)
 	return
 }
 
-func optimalLabels(values descriptor[int64], intervals []int64, stringify func(interval int64, label int64) string) []label {
-	interval, count := optimalInterval(values, intervals)
+func optimalLabels(values descriptor[int64], maxCount int, intervals []int64, stringify func(interval int64, label int64) string) []label {
+	interval, count := optimalInterval(values, maxCount, intervals)
 	ans := make([]label, count)
 	v := values.Min + interval - 1
 	v -= v % interval
@@ -33,10 +33,10 @@ func optimalLabels(values descriptor[int64], intervals []int64, stringify func(i
 	return ans
 }
 
-func optimalInterval(values descriptor[int64], intervals []int64) (interval int64, count int) {
+func optimalInterval(values descriptor[int64], maxCount int, intervals []int64) (interval int64, count int) {
 	for _, intr := range intervals {
 		cnt := labelCount(values, intr)
-		if int64(count) < cnt && cnt <= 11 {
+		if int64(count) < cnt && cnt <= int64(maxCount) {
 			interval = intr
 			count = int(cnt)
 		}

@@ -13,6 +13,11 @@ import (
 
 func dataGet(w http.ResponseWriter, r *http.Request) error {
 	cfg := graphConfig{}
+	cfg.minT = time.Unix(0, 0)
+	cfg.maxT = time.Now()
+	cfg.sumD = time.Duration(0)
+	cfg.xLabels = 10
+	cfg.yLabels = 10
 	err := validateUrl(r, &cfg)
 	if err != nil {
 		return err
@@ -31,9 +36,7 @@ func dataGet(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 	applyQueryFilters(data, cfg)
-
 	marshalData(w, data, cfg)
-
 	return nil
 }
 

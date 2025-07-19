@@ -1,0 +1,13 @@
+[
+  {
+    "label": "Debug",
+    "adapter": "Delve",
+    "request": "launch",
+    "mode": "debug",
+    "program": ".",
+    "cwd": "/home/karim/Dev/pltt/cmd",
+    "args": [],
+    "buildFlags": [],
+    "env": { "PORT": "8080" }
+  }
+]

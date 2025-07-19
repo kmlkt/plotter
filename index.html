@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+    <head>
+        <title>%s - plotter</title>
+        <style>
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                overflow: clip;
+            }
+            svg {
+                width: 90vw;
+                height: 90vh;
+                margin: 10vh 0 0 0;
+                border: 0;
+                padding: 0;
+            }
+            #tooltip {
+                position: absolute;
+            }
+        </style>
+    </head>
+    <body>
+        <svg></svg>
+        <span id="tooltip"></span>
+        <script>
+            const $tooltip = document.querySelector("#tooltip");
+            let circles = [];
+            let x = 0;
+            let y = 0;
+            const dist = (c) => Math.abs(x - c.x);
+            const distY = (c) => Math.abs(y - c.y);
+            const updateHovered = () => {
+                let nearest = undefined;
+                for (const c of circles) {
+                    if (
+                        !nearest ||
+                        dist(c) < dist(nearest) ||
+                        (dist(c) == dist(nearest) && distY(c) < distY(nearest))
+                    ) {
+                        nearest = c;
+                    }
+                }
+                if (nearest) {
+                    tooltip.textContent = nearest.text;
+                    tooltip.style.left =
+                        nearest.x - tooltip.clientWidth / 2 + "px";
+                    tooltip.style.top = nearest.y - 20 + "px";
+                }
+            };
+            const onMouseMove = (e) => {
+                x = e.clientX;
+                y = e.clientY;
+                updateHovered();
+            };
+            document.body.addEventListener("mousemove", onMouseMove);
+            const refresh = async () => {
+                const response = await fetch(
+                    window.location.origin +
+                        window.location.pathname +
+                        ".svg" +
+                        window.location.search,
+                );
+                const text = await response.text();
+                document.querySelector("svg").outerHTML = text;
+                circles = Array.from(document.querySelectorAll("circle")).map(
+                    (c) => ({
+                        x:
+                            (c.getBoundingClientRect().left +
+                                c.getBoundingClientRect().right) /
+                            2,
+                        y: c.getBoundingClientRect().y,
+                        text: c.textContent,
+                    }),
+                );
+                updateHovered();
+                setTimeout(refresh, 1000);
+            };
+            refresh();
+        </script>
+    </body>
+</html>

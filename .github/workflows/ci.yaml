@@ -6,6 +6,10 @@ permissions:
   attestations: write
   id-token: write
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 on: [push, pull_request]
 
 jobs:

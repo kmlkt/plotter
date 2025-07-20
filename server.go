@@ -11,7 +11,7 @@ func StartServer() {
 	http.HandleFunc("POST /{$}", writeReturnedError(keysPost))
 	http.HandleFunc("GET /{keys}", writeReturnedError(dataGet))
 	http.HandleFunc("POST /{key}", writeReturnedError(dataPost))
-	err := http.ListenAndServe("localhost:"+port, nil)
+	err := http.ListenAndServe("0.0.0.0:"+port, nil)
 	if err != nil {
 		slog.Error("Unable to start service", "error", err)
 	}

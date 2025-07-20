@@ -5,7 +5,7 @@
     "request": "launch",
     "mode": "debug",
     "program": ".",
-    "cwd": "/home/karim/Dev/pltt/cmd",
+    "cwd": "$ZED_WORKTREE_ROOT/cmd",
     "args": [],
     "buildFlags": [],
     "env": { "PORT": "8080" }

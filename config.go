@@ -15,10 +15,11 @@ var (
 func init() {
 	setFromEnv(&port, "PORT")
 	cwd, _ := os.Getwd()
-	setFromEnv(&cwd, "DIR")
-	dirData = path.Join(cwd, "data")
-	dirRead = path.Join(cwd, "read")
-	dirWrite = path.Join(cwd, "write")
+	dirStorage := path.Join(cwd, "storage")
+	setFromEnv(&dirStorage, "DIR")
+	dirData = path.Join(dirStorage, "data")
+	dirRead = path.Join(dirStorage, "read")
+	dirWrite = path.Join(dirStorage, "write")
 }
 
 func setFromEnv(s *string, key string) {

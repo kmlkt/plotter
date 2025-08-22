@@ -14,10 +14,10 @@ func applyQueryFilters(data []iter.Seq[record], cfg graphConfig) {
 func since(s iter.Seq[record], t time.Time) iter.Seq[record] {
 	return func(yield func(record) bool) {
 		for r := range s {
-			if r.Timestamp.Before(t) {
+			if !yield(r) {
 				return
 			}
-			if !yield(r) {
+			if r.Timestamp.Before(t) {
 				return
 			}
 		}
@@ -27,11 +27,11 @@ func since(s iter.Seq[record], t time.Time) iter.Seq[record] {
 func until(s iter.Seq[record], t time.Time) iter.Seq[record] {
 	return func(yield func(record) bool) {
 		for r := range s {
-			if r.Timestamp.After(t) {
-				continue
-			}
 			if !yield(r) {
 				return
+			}
+			if r.Timestamp.After(t) {
+				continue
 			}
 		}
 	}

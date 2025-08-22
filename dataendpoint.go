@@ -63,10 +63,13 @@ func dataPost(_ http.ResponseWriter, r *http.Request) error {
 //go:embed index.html
 var indexHtml string
 
+//go:embed index.js
+var indexJs string
+
 func marshalData(w io.Writer, data []iter.Seq[record], cfg graphConfig) {
 	switch cfg.format {
 	case formatHtml:
-		fmt.Fprintf(w, indexHtml, strings.Join(cfg.keys, " & "))
+		fmt.Fprintf(w, indexHtml, strings.Join(cfg.keys, " & "), indexJs)
 	case formatSvg:
 		buildGraph(w, data, cfg)
 	case formatCsv:

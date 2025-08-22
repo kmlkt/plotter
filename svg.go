@@ -5,6 +5,7 @@ import (
 	"io"
 	"iter"
 	"strings"
+	"time"
 )
 
 func buildGraph(w io.Writer, iters []iter.Seq[record], cfg graphConfig) {
@@ -39,6 +40,7 @@ func buildGraph(w io.Writer, iters []iter.Seq[record], cfg graphConfig) {
 	}
 	drawAxis(desc, cfg, w)
 	drawLegend(w, cfg.keys)
+	drawMeta(w, desc.Times.Min, desc.Times.Max)
 	fmt.Fprint(w, "</svg>")
 }
 
@@ -126,4 +128,8 @@ func dataSourceColor(i int) string {
 		return colors[i]
 	}
 	return "black"
+}
+
+func drawMeta(w io.Writer, minT time.Time, maxT time.Time) {
+	fmt.Fprintf(w, `<desc id='since'>%v</desc><desc id='until'>%v</desc>`, minT.Unix(), maxT.Unix())
 }
